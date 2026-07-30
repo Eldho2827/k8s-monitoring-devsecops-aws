@@ -13,7 +13,7 @@ pipeline {
             }
         }
 
-       stage('SonarQube Analysis') {
+        stage('SonarQube Analysis') {
             steps {
                 withSonarQubeEnv('sonarqube-server') {
                     sh '''
@@ -31,6 +31,14 @@ pipeline {
                 timeout(time: 5, unit: 'MINUTES') {
                     waitForQualityGate abortPipeline: true
                 }
+            }
+        }
+
+        stage('Trivy Scan') {
+            steps {
+                sh '''
+                    trivy image --severity CRITICAL --exit-code 1 nginx:latest
+                '''
             }
         }
     }
