@@ -1,0 +1,77 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: custom-alert-rules
+  namespace: monitoring
+  labels:
+    release: monitoring
+spec:
+  groups:
+  - name: node-alerts
+    rules:
+    - alert: HighCPUUsage
+      expr: 100 - (avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+      for: 5m
+      labels:
+        severity: warning
+      annotations:
+        summary: "High CPU usage on {{ $labels.instance }}"
+        description: "CPU usage is above 80% for more than 5 minutes (current value: {{ $value }}%)."
+
+    - alert: HighMemoryUsage
+      expr: (node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes * 100 > 85
+      for: 5m
+      labels:
+        severity: warning
+      annotations:
+        summary: "High memory usage on {{ $labels.instance }}"
+        description: "Memory usage is above 85% for more than 5 minutes (current value: {{ $value }}%)."
+
+    - alert: LowDiskSpace
+      expr: (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"}) * 100 < 15
+      for: 5m
+      labels:
+        severity: warning
+      annotations:
+        summary: "Low disk space on {{ $labels.instance }}"
+        description: "Available disk space is below 15% (current value: {{ $value }}%)."
+
+    - alert: NodeNotReady
+      expr: kube_node_status_condition{condition="Ready", status="true"} == 0
+      for: 2m
+      labels:
+        severity: critical
+      annotations:
+        summary: "Node {{ $labels.node }} is not ready"
+        description: "Node {{ $labels.node }} has been NotReady for more than 2 minutes."
+
+  - name: pod-alerts
+    rules:
+    - alert: PodCrashLoopBackOff
+      expr: kube_pod_container_status_waiting_reason{reason="CrashLoopBackOff"} == 1
+      for: 2m
+      labels:
+        severity: critical
+      annotations:
+        summary: "Pod {{ $labels.pod }} is in CrashLoopBackOff"
+        description: "Pod {{ $labels.pod }} in namespace {{ $labels.namespace }} is crash-looping."
+
+    - alert: ApplicationDown
+      expr: kube_deployment_status_replicas_available{namespace="demo-app", deployment="demo-app"} < 1
+      for: 1m
+      labels:
+        severity: critical
+      annotations:
+        summary: "Application {{ $labels.deployment }} has no available replicas"
+        description: "Deployment {{ $labels.deployment }} in namespace {{ $labels.namespace }} has had zero available replicas for over 1 minute."
+
+  - name: application-alerts
+    rules:
+    - alert: HighPodRestartRate
+      expr: increase(kube_pod_container_status_restarts_total[15m]) > 3
+      for: 5m
+      labels:
+        severity: warning
+      annotations:
+        summary: "Pod {{ $labels.pod }} restarting frequently"
+        description: "Pod {{ $labels.pod }} in namespace {{ $labels.namespace }} has restarted more than 3 times in the last 15 minutes (used as a proxy for application error rate — app has no custom /metrics endpoint)."
