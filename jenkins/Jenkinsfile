@@ -14,6 +14,14 @@ pipeline {
                 sh 'ls -la'
             }
         }
+	
+	stage('Secret Detection') {
+            steps {
+                sh '''
+                    gitleaks detect --source=. --no-git -v
+                '''
+            }
+        }	
 
         stage('SonarQube Scan') {
             steps {
