@@ -45,7 +45,7 @@ pipeline {
             steps {
                 withCredentials([file(credentialsId: 'kubeconfig-creds', variable: 'KUBECONFIG')]) {
                     sh '''
-                        kubectl set image deployment/demo-app demo-app=nginx:stable-alpine -n demo-app --kubeconfig=$KUBECONFIG
+                        kubectl set image deployment/demo-app nginx=nginx:stable-alpine -n demo-app --kubeconfig=$KUBECONFIG
                         kubectl rollout status deployment/demo-app -n demo-app --kubeconfig=$KUBECONFIG
                     '''
                 }
