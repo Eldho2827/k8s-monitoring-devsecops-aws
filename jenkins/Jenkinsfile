@@ -23,6 +23,25 @@ pipeline {
             }
         }	
 
+	stage('Dependency Scanning') {
+            steps {
+                script {
+                    try {
+                        sh '''
+                            /opt/dependency-check/bin/dependency-check.sh \
+                              --project demo-app \
+                              --scan . \
+                              --format HTML \
+                              --out dependency-check-report \
+                              --nvdApiKey ""
+                        '''
+                    } catch (err) {
+                        echo "Dependency-Check encountered an issue (often NVD sync delays in lab environments) - continuing pipeline: ${err}"
+                    }
+                }
+            }
+        }
+	
         stage('SonarQube Scan') {
             steps {
                 withSonarQubeEnv('sonarqube-server') {
