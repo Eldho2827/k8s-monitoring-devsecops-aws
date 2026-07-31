@@ -22,6 +22,21 @@ Full requirement-by-requirement documentation, design rationale, and known limit
 
 ---
 
+## 📑 Table of Contents
+
+- [Architecture](#️-architecture)
+- [Features](#-features)
+- [Tech Stack](#-tech-stack)
+- [Pipeline Flow](#-pipeline-flow)
+- [Getting Started](#-getting-started)
+- [Screenshots](#-screenshots)
+- [Repository Structure](#-repository-structure)
+- [Known Limitations](#️-known-limitations)
+- [Related Projects](#-related-projects)
+- [Author](#-author)
+
+---
+
 ## 🏗️ Architecture
 
 ```
@@ -113,6 +128,52 @@ Each build produces a uniquely-tagged image (`eldho10/capstone3-demo-app:<build-
 
 ---
 
+## 🚀 Getting Started
+
+### Prerequisites
+
+- 3 EC2 instances (Ubuntu 24.04) for a `kubeadm` cluster, plus 2 additional EC2 instances for Jenkins and SonarQube
+- `kubectl`, `helm`, and `kubeadm` installed on the respective nodes
+- A Docker Hub account (or another container registry) for image pushes
+- Security groups allowing cluster-internal traffic plus NodePort access to Grafana/Prometheus
+
+### 1. Bring up the Kubernetes cluster
+
+```bash
+# On k8s-master
+kubeadm init --pod-network-cidr=192.168.0.0/16
+kubectl apply -f https://raw.githubusercontent.com/projectcalico/calico/v3.27.0/manifests/calico.yaml
+
+# On each worker
+kubeadm join <master-ip>:6443 --token <token> --discovery-token-ca-cert-hash <hash>
+```
+
+### 2. Install the monitoring stack
+
+```bash
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm install monitoring prometheus-community/kube-prometheus-stack -n monitoring --create-namespace
+
+kubectl apply -f monitoring/custom-alert-rules.yaml
+```
+
+### 3. Deploy the demo application
+
+```bash
+kubectl create namespace demo-app
+kubectl apply -f k8s/ -n demo-app   # deployment + service manifests
+```
+
+### 4. Run the Jenkins pipeline
+
+- Point a Jenkins pipeline job at this repository, using `jenkins/Jenkinsfile`
+- Configure Jenkins credentials for Docker Hub, SonarQube, and kubeconfig access
+- Trigger a build — it runs Checkout → Secret Detection → Dependency Scanning → SonarQube Scan → Quality Gate → Docker Build → Image Scan → Push to Docker Hub → Deploy to Kubernetes → Rollout Verification end-to-end
+
+Full setup notes, design decisions, and validation steps for every stage are in [`MONITORING-DOCUMENTATION.md`](./MONITORING-DOCUMENTATION.md).
+
+---
+
 ## 📸 Screenshots
 
 **Kubernetes cluster ready (kubeadm + Calico)**
@@ -179,6 +240,15 @@ Each build produces a uniquely-tagged image (`eldho10/capstone3-demo-app:<build-
 
 ---
 
+## 🔗 Related Projects
+
+This is the third of a 3-part DevOps capstone series:
+
+- [`three-tier-cicd-platform-aws`](https://github.com/Eldho2827/three-tier-cicd-platform-aws) — Capstone 1: Enterprise CI/CD Platform (Jenkins, SonarQube, Docker, Kubernetes on Kubespray)
+- [`cloud-infra-automation-platform`](https://github.com/Eldho2827/cloud-infra-automation-platform) — Capstone 2: Infrastructure Automation Platform (Terraform + Ansible + Jenkins)
+
+---
+
 ## 👤 Author
 
 **Eldho Sabu**
@@ -186,9 +256,3 @@ DevOps / Cloud Engineer (AWS)
 
 [![GitHub](https://img.shields.io/badge/GitHub-Eldho2827-181717?logo=github&logoColor=white)](https://github.com/Eldho2827)
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-eldhosabu08-0A66C2?logo=linkedin&logoColor=white)](https://www.linkedin.com/in/eldhosabu08)
-
----
-
-## 📄 License
-
-This project is licensed under the MIT License.
