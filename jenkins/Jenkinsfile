@@ -34,10 +34,10 @@ pipeline {
             }
         }
 
-        stage('Trivy Scan') {
+       stage('Trivy Scan') {
             steps {
                 sh '''
-                    trivy image --severity CRITICAL --exit-code 1 nginx:latest
+                    trivy image --severity CRITICAL --exit-code 1 nginx:stable-alpine
                 '''
             }
         }
