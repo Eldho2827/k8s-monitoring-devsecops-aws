@@ -3,6 +3,8 @@ pipeline {
 
     environment {
         SONAR_HOST_URL = 'http://172.31.36.8:9000'
+        IMAGE_NAME = 'eldho10/capstone3-demo-app'
+        IMAGE_TAG = "${env.BUILD_NUMBER}"
     }
 
     stages {
@@ -13,7 +15,7 @@ pipeline {
             }
         }
 
-        stage('SonarQube Analysis') {
+        stage('SonarQube Scan') {
             steps {
                 withSonarQubeEnv('sonarqube-server') {
                     sh '''
@@ -34,18 +36,47 @@ pipeline {
             }
         }
 
-       stage('Trivy Scan') {
+        stage('Docker Build') {
             steps {
                 sh '''
-                    trivy image --severity CRITICAL --exit-code 1 nginx:stable-alpine
+                    docker build -t $IMAGE_NAME:$IMAGE_TAG .
                 '''
             }
         }
-	stage('Deploy to Kubernetes') {
+
+        stage('Image Scan') {
+            steps {
+                sh '''
+                    trivy image --severity CRITICAL --exit-code 1 $IMAGE_NAME:$IMAGE_TAG
+                '''
+            }
+        }
+
+        stage('Push Registry') {
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                    sh '''
+                        echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
+                        docker push $IMAGE_NAME:$IMAGE_TAG
+                    '''
+                }
+            }
+        }
+
+        stage('Deploy to Kubernetes') {
             steps {
                 withCredentials([file(credentialsId: 'kubeconfig-creds', variable: 'KUBECONFIG')]) {
                     sh '''
-                        kubectl set image deployment/demo-app nginx=nginx:stable-alpine -n demo-app --kubeconfig=$KUBECONFIG
+                        kubectl set image deployment/demo-app nginx=$IMAGE_NAME:$IMAGE_TAG -n demo-app --kubeconfig=$KUBECONFIG
+                    '''
+                }
+            }
+        }
+
+        stage('Rollout Verification') {
+            steps {
+                withCredentials([file(credentialsId: 'kubeconfig-creds', variable: 'KUBECONFIG')]) {
+                    sh '''
                         kubectl rollout status deployment/demo-app -n demo-app --kubeconfig=$KUBECONFIG
                     '''
                 }
