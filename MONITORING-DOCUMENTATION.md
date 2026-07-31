@@ -196,8 +196,8 @@ Both Jenkins-related scrape targets (`jenkins-node-exporter`, `jenkins-metrics`)
 | 01–07 | AWS infrastructure, Kubernetes cluster bring-up (kubeadm, Calico, node readiness) |
 | 08–16 | Monitoring stack installation, Grafana/Prometheus access, PromQL validation |
 | 17–20 | Custom alert rules applied, demo app deployed, alert firing proof, AlertManager receipt |
-| 21–23 | SonarQube dashboard, Trivy scan output, Trivy blocking a vulnerable build |
-| 24–27 | Jenkins pipeline evolution (5-stage → 8-stage), Docker Hub image push |
+| 21–24 | SonarQube dashboard, Trivy scan output (manual CLI + pipeline), Trivy blocking a vulnerable build |
+| 25–27 | Jenkins pipeline evolution (5-stage → 8-stage), Docker Hub image push |
 | 28–29 | Grafana Deployment Status and Pod Health dashboards, scoped to demo-app |
 | 30 | Final complete 9-stage pipeline, all stages passing |
 
