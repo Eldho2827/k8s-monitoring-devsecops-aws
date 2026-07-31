@@ -11,7 +11,6 @@ An end-to-end Kubernetes monitoring stack combined with a security-gated CI/CD p
 [![SonarQube](https://img.shields.io/badge/SonarQube-Quality%20Gate-4E9BCD?logo=sonarqube&logoColor=white)](https://www.sonarsource.com/products/sonarqube/)
 [![Trivy](https://img.shields.io/badge/Trivy-Image%20Scanning-1904DA?logo=aquasecurity&logoColor=white)](https://aquasecurity.github.io/trivy/)
 [![Gitleaks](https://img.shields.io/badge/Gitleaks-Secret%20Detection-FFCE00)](https://github.com/gitleaks/gitleaks)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 ---
 
